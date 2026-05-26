@@ -43,14 +43,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if ($error): ?>
       <div class="auth-error show"><?= htmlspecialchars($error) ?></div>
     <?php endif; ?>
+    
     <form method="POST" action="login.php">
       <label>Email</label>
       <input type="email" name="email" placeholder="your@student.edu.my"
              value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
+      
       <label>Password</label>
       <input type="password" name="password" placeholder="••••••••" required>
+      
+      <!-- Forgot Password Link -->
+      <div class="forgot-password">
+        <a href="forgot_password.php">Forgot Password?</a>
+      </div>
+      
       <button type="submit" class="auth-btn">Sign In</button>
     </form>
+    
     <div class="auth-link">
       No account? <a href="register.php">Register here</a>
     </div>
