@@ -1,8 +1,7 @@
 <?php
-
-require __DIR__ . '/../src/Exception.php';
-require __DIR__ . '/../src/PHPMailer.php';
-require __DIR__ . '/../src/SMTP.php';
+require __DIR__ . '/PHPMailer-7.1.1/src/Exception.php';
+require __DIR__ . '/PHPMailer-7.1.1/src/PHPMailer.php';
+require __DIR__ . '/PHPMailer-7.1.1/src/SMTP.php';
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
@@ -16,16 +15,15 @@ function sendPasswordResetEmail($email, $name, $reset_token) {
         $mail->isSMTP();
         $mail->Host       = 'smtp.gmail.com';
         $mail->SMTPAuth   = true;
-        $mail->Username   = 'shynayip913@gmail.com';           // ← your Gmail
-        $mail->Password   = 'splkzndhplhccemp';                // ← App Password (not normal password!)
+        $mail->Username   = 'shynayip913@gmail.com';           
+        $mail->Password   = 'abcdefghijklmnop';
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
         $mail->Port       = 587;
 
-        // Recipients
         $mail->setFrom('shynayip913@gmail.com', 'Lost and Found Campus Hub');
         $mail->addAddress($email, $name);                     
 
-        // Content
+
         $mail->isHTML(true);
         $mail->Subject = 'Reset Your Password - Lost and Found Campus Hub';
 

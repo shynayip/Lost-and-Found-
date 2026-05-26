@@ -14,7 +14,7 @@ if ($token) {
     $result = $stmt->get_result();
     $reset = $result->fetch_assoc();
 
-    if (!$reset) {
+    if (!$user) {
         $error = 'Invalid or expired reset link. Please request a new one.';
     } else {
         $email = $reset['email'];

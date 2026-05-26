@@ -13,29 +13,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Please enter a valid email address.";
     } else {
         $db = getDB();
-        
-        // Check if email exists
         $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->bind_param('s', $email);
         $stmt->execute();
         $user = $stmt->get_result()->fetch_assoc();
 
         if ($user) {
-            // Generate token
             $token = bin2hex(random_bytes(32));
             $expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
 
-            // Save reset token
             $stmt = $db->prepare("INSERT INTO password_resets (email, token, expires) 
                                  VALUES (?, ?, ?) 
                                  ON DUPLICATE KEY UPDATE token = VALUES(token), expires = VALUES(expires)");
             $stmt->bind_param('sss', $email, $token, $expires);
             $stmt->execute();
 
-            // Create reset link
-            $reset_link = "https://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/reset_password.php?token=" . $token;
+            $reset_link = "https://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/resetpassword.php?token=" . $token;
 
-            // === Email Sending ===
             $subject = "Reset Your Password - Lost & Found Campus Hub";
             
             $message = "
