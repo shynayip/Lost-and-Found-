@@ -1,7 +1,4 @@
 <?php
-/* ============================================
-   pages/login.php — Login Page
-   ============================================ */
 session_start();
 require_once '../db.php';
 
@@ -52,9 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <label>Password</label>
       <input type="password" name="password" placeholder="••••••••" required>
       
-      <!-- Forgot Password Link -->
       <div class="forgot-password">
-        <a href="forgot_password.php">Forgot Password?</a>
+        <a href="forgotpassword.php">Forgot Password?</a>
       </div>
       
       <button type="submit" class="auth-btn">Sign In</button>

@@ -1,8 +1,4 @@
 <?php
-/* ============================================
-   Lost & Found Campus Hub — db.php
-   MySQL Database Connection
-   ============================================ */
 
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');        // change to your MySQL username
