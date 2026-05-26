@@ -1,7 +1,7 @@
 <?php
 session_start();
 require_once '../db.php';
-require_once 'mail.php';
+require_once 'mail.php';  
 
 $error = '';
 $success = '';
@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = "Please enter a valid email address.";
     } else {
         $db = getDB();
-        $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt = $db->prepare("SELECT id, name FROM users WHERE email = ?");
         $stmt->bind_param('s', $email);
         $stmt->execute();
         $user = $stmt->get_result()->fetch_assoc();
@@ -28,41 +28,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->bind_param('sss', $email, $token, $expires);
             $stmt->execute();
 
-            $reset_link = "https://" . $_SERVER['HTTP_HOST'] . dirname($_SERVER['PHP_SELF']) . "/resetpassword.php?token=" . $token;
-
-            $subject = "Reset Your Password - Lost & Found Campus Hub";
-            
-            $message = "
-            <html>
-            <head>
-                <title>Password Reset</title>
-            </head>
-            <body>
-                <h2>Password Reset Request</h2>
-                <p>Hello,</p>
-                <p>You requested to reset your password. Click the button below:</p>
-                <p style='margin: 25px 0;'>
-                    <a href='$reset_link' style='background:#e74c3c; color:white; padding:12px 25px; text-decoration:none; border-radius:5px; font-weight:bold;'>
-                        Reset My Password
-                    </a>
-                </p>
-                <p>This link will expire in 1 hour.</p>
-                <p>If you did not request this, please ignore this email.</p>
-                <p>Best regards,<br><strong>Lost & Found Campus Hub</strong></p>
-            </body>
-            </html>";
-
-            $headers = "MIME-Version: 1.0" . "\r\n";
-            $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
-            $headers .= "From: no-reply@" . $_SERVER['HTTP_HOST'] . "\r\n";
-
-            if (mail($email, $subject, $message, $headers)) {
-                $success = "Password reset link has been sent to your email!";
-            } else {
-                $error = "Failed to send email. Please try again later.";
-            }
+            if (sendPasswordResetEmail($email, $user['name'], $token)) {
+    $success = "Password reset link has been sent to your email!";
+} else {
+    // ADD THIS to see the error in your PHP error logs
+    error_log("Email failed to send to: " . $email);
+    $error = "Failed to send email. Check your error logs.";
+}
         } else {
-            // For security, show same message even if email not found
             $success = "If an account with that email exists, a reset link has been sent.";
         }
     }
@@ -102,7 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label>Your Registered Email</label>
         <input type="email" name="email" placeholder="your@student.edu.my" 
                value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
-        
         <button type="submit" class="auth-btn">Send Reset Link</button>
       </form>
     <?php endif; ?>
