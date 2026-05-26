@@ -174,3 +174,18 @@ main.feed-wrap{flex:1;padding:14px 14px calc(var(--bottom-h)+14px);display:flex;
 .auth-link a{color:var(--accent);text-decoration:none;font-weight:600;}
 .auth-error{background:#fde8e4;border:1px solid #f0b0a0;border-radius:8px;padding:9px 13px;font-size:13px;color:#a02010;margin-bottom:10px;display:none;}
 .auth-error.show{display:block;}
+
+.forgot-password {
+    text-align: right;
+    margin: 8px 0 15px 0;
+}
+
+.forgot-password a {
+    color: #e74c3c;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+
+.forgot-password a:hover {
+    text-decoration: underline;
+}
