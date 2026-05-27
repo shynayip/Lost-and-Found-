@@ -1,15 +1,17 @@
 <?php
 session_start();
 require_once '../db.php';
+require_once 'mail.php';  
 
 $error = '';
+$success = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name      = trim($_POST['name']      ?? '');
-    $email     = trim($_POST['email']     ?? '');
-    $studentId = trim($_POST['student_id']?? '');
-    $password  = $_POST['password']       ?? '';
-    $confirm   = $_POST['confirm']        ?? '';
-    $db        = getDB();
+    $name      = trim($_POST['name'] ?? '');
+    $email     = trim($_POST['email'] ?? '');
+    $studentId = trim($_POST['student_id'] ?? '');
+    $password  = $_POST['password'] ?? '';
+    $confirm   = $_POST['confirm'] ?? '';
 
     if (!$name || !$email || !$password) {
         $error = 'Please fill in all required fields.';
@@ -18,20 +20,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (strlen($password) < 6) {
         $error = 'Password must be at least 6 characters.';
     } else {
-        $hash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $db->prepare("INSERT INTO users (name, email, student_id, password) VALUES (?,?,?,?)");
-        $stmt->bind_param('ssss', $name, $email, $studentId, $hash);
-        if ($stmt->execute()) {
-            $_SESSION['user_id']   = $db->insert_id;
-            $_SESSION['user_name'] = $name;
-            header('Location: index.php');
-            exit;
-        } else {
+        $db = getDB();
+
+        // Check if email already exists
+        $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
+        $stmt->bind_param('s', $email);
+        $stmt->execute();
+        if ($stmt->get_result()->num_rows > 0) {
             $error = 'Email already registered. Try logging in.';
+        } else {
+            $hash = password_hash($password, PASSWORD_DEFAULT);
+            $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6)); // 6-digit code
+            $expires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+
+            
+            $stmt->bind_param('ssssss', $name, $email, $studentId, $hash, $code, $expires);
+
+            if ($stmt->execute()) {
+                $user_id = $db->insert_id;
+
+                // Send verification email
+                if (sendVerificationEmail($email, $name, $code)) {
+                    $_SESSION['pending_user_id'] = $user_id;
+                    $_SESSION['pending_email'] = $email;
+                    header('Location: verify.php');
+                    exit;
+                } else {
+                    $error = "Failed to send verification email.";
+                }
+            } else {
+                $error = 'Registration failed. Please try again.';
+            }
         }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,18 +75,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
     <form method="POST" action="register.php">
       <label>Full Name *</label>
-      <input type="text" name="name" placeholder="e.g. Zara Izzati"
-             value="<?= htmlspecialchars($_POST['name'] ?? '') ?>" required>
+      <input type="text" name="name" placeholder="e.g. Zara Izzati" required>
+      
       <label>Email *</label>
-      <input type="email" name="email" placeholder="your@student.edu.my"
-             value="<?= htmlspecialchars($_POST['email'] ?? '') ?>" required>
+      <input type="email" name="email" placeholder="your@student.edu.my" required>
+      
       <label>Student ID</label>
-      <input type="text" name="student_id" placeholder="e.g. 2024123456"
-             value="<?= htmlspecialchars($_POST['student_id'] ?? '') ?>">
+      <input type="text" name="student_id" placeholder="e.g. 2024123456">
+      
       <label>Password *</label>
       <input type="password" name="password" placeholder="Min 6 characters" required>
+      
       <label>Confirm Password *</label>
       <input type="password" name="confirm" placeholder="Repeat password" required>
+      
       <button type="submit" class="auth-btn">Create Account</button>
     </form>
     <div class="auth-link">Already have an account? <a href="login.php">Sign in</a></div>

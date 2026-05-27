@@ -1,1 +1,4 @@
-CREATE DATABASE lostandfound;
+ALTER TABLE users 
+ADD COLUMN verified TINYINT(1) NOT NULL DEFAULT 0,
+ADD COLUMN verification_code VARCHAR(10) NULL,
+ADD COLUMN verification_expires DATETIME NULL;
