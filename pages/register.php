@@ -1,7 +1,4 @@
 <?php
-/* ============================================
-   pages/register.php — Register Page
-   ============================================ */
 session_start();
 require_once '../db.php';
 

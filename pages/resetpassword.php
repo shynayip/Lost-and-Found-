@@ -6,9 +6,11 @@ $error = '';
 $success = '';
 $token = $_GET['token'] ?? '';
 
-if ($token) {
+if (empty($token)) {
+    $error = 'No reset token provided.';
+} else {
     $db = getDB();
-    $stmt = $db->prepare("SELECT email FROM password_resets WHERE token = ? AND expires > NOW()");
+    $stmt = $db->prepare("SELECT email, expires FROM password_resets WHERE token = ?");
     $stmt->bind_param("s", $token);
     $stmt->execute();
     $result = $stmt->get_result();
@@ -19,9 +21,9 @@ if ($token) {
     } else {
         $email = $reset['email'];
     }
-} else {
-    $error = 'No reset token provided.';
 }
+
+// ... rest of your code remains the same
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && empty($error)) {
     $password = $_POST['password'] ?? '';
