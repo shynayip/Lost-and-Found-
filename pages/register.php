@@ -4,7 +4,6 @@ require_once '../db.php';
 require_once 'mail.php';  
 
 $error = '';
-$success = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name      = trim($_POST['name'] ?? '');
@@ -26,23 +25,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $db->prepare("SELECT id FROM users WHERE email = ?");
         $stmt->bind_param('s', $email);
         $stmt->execute();
+        
         if ($stmt->get_result()->num_rows > 0) {
             $error = 'Email already registered. Try logging in.';
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
             $code = strtoupper(substr(bin2hex(random_bytes(4)), 0, 6)); // 6-digit code
-            $expires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
-            
-            $stmt->bind_param('ssssss', $name, $email, $studentId, $hash, $code, $expires);
+            // Insert user (without verification columns)
+            $stmt = $db->prepare("INSERT INTO users (name, email, student_id, password, verified) 
+                                 VALUES (?, ?, ?, ?, 0)");
+            $stmt->bind_param('ssss', $name, $email, $studentId, $hash);
 
             if ($stmt->execute()) {
                 $user_id = $db->insert_id;
 
+                // Store verification data in session
+                $_SESSION['pending_user_id'] = $user_id;
+                $_SESSION['pending_email']   = $email;
+                $_SESSION['verification_code'] = $code;
+                $_SESSION['code_expires']    = time() + (30 * 60); // 30 minutes
+
                 // Send verification email
                 if (sendVerificationEmail($email, $name, $code)) {
-                    $_SESSION['pending_user_id'] = $user_id;
-                    $_SESSION['pending_email'] = $email;
                     header('Location: verify.php');
                     exit;
                 } else {

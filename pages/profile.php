@@ -1,7 +1,4 @@
 <?php
-/* ============================================
-   pages/profile.php — User Profile Page
-   ============================================ */
 session_start();
 require_once '../db.php';
 
@@ -103,16 +100,6 @@ require_once '../includes/header.php';
     </div>
     <?php endforeach; ?>
   <?php endif; ?>
-
-  <div style="margin-top:20px;">
-    <a href="settings.php"
-       style="display:block;text-align:center;background:var(--surface2);
-              border:1.5px solid var(--border);border-radius:10px;padding:12px;
-              font-family:'Syne',sans-serif;font-weight:700;font-size:14px;
-              color:var(--text);text-decoration:none;">
-      ⚙️ Settings
-    </a>
-  </div>
 </div>
 
 <?php require_once '../includes/footer.php'; ?>
