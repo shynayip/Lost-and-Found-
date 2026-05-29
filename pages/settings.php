@@ -7,6 +7,7 @@ require_once '../db.php';
 
 $activePage = 'settings';
 $success = '';
+$error   = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db     = getDB();
@@ -47,6 +48,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = 'Password changed!';
         }
     }
+
+    if ($action === 'delete_account') {
+        $userId = $_SESSION['user_id'] ?? null;
+        if ($userId) {
+            $db = getDB();
+            // Delete user's items first
+            $stmt = $db->prepare("DELETE FROM items WHERE user_id=?");
+            $stmt->bind_param('i', $userId);
+            $stmt->execute();
+            // Delete the user
+            $stmt2 = $db->prepare("DELETE FROM users WHERE id=?");
+            $stmt2->bind_param('i', $userId);
+            if ($stmt2->execute()) {
+                session_destroy();
+                header('Location: register.php');
+                exit;
+            } else {
+                $error = 'Failed to delete account. Please try again.';
+            }
+        }
+    }
 }
 
 // Load current user
@@ -60,76 +82,101 @@ $user = $stmt->get_result()->fetch_assoc();
 require_once '../includes/header.php';
 ?>
 
-<div class="settings-wrap">
-  <div style="font-family:'Syne',sans-serif;font-weight:800;font-size:20px;margin-bottom:20px;">
-    ⚙️ Settings
-  </div>
+<style>
+.pw-wrap { position: relative; }
+.pw-wrap .settings-input { padding-right: 44px; }
+.pw-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color .18s;
+}
+.pw-eye:hover { color: var(--accent); }
+.pw-eye svg { width: 18px; height: 18px; }
+</style>
 
-  <?php if (!empty($success)): ?>
-    <div style="background:#d6f5e6;border:1px solid #7edcab;border-radius:8px;
-                padding:10px 14px;font-size:13px;color:#1a7a46;margin-bottom:14px;">
-      ✅ <?= htmlspecialchars($success) ?>
-    </div>
+<div class="settings-wrap">
+  <div class="settings-page-title">⚙️ Settings</div>
+
+  <?php if ($success): ?>
+    <div class="alert-success">✅ <?= htmlspecialchars($success) ?></div>
   <?php endif; ?>
-  <?php if (!empty($error)): ?>
-    <div style="background:#fde8e4;border:1px solid #f0b0a0;border-radius:8px;
-                padding:10px 14px;font-size:13px;color:#a02010;margin-bottom:14px;">
-      ❌ <?= htmlspecialchars($error) ?>
-    </div>
+  <?php if ($error): ?>
+    <div class="alert-error">❌ <?= htmlspecialchars($error) ?></div>
   <?php endif; ?>
 
   <!-- ACCOUNT -->
   <div class="settings-section">
     <div class="settings-section-title">Account</div>
-    <form method="POST" action="settings.php">
-      <input type="hidden" name="action" value="update_profile">
-      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:7px;">
-        <label style="display:block;font-size:12px;color:var(--text-muted);text-transform:uppercase;
-                      letter-spacing:.5px;margin-bottom:5px;">Full Name</label>
-        <input type="text" name="name" value="<?= htmlspecialchars($user['name'] ?? '') ?>"
-               style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;
-                      padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:10px;">
-        <label style="display:block;font-size:12px;color:var(--text-muted);text-transform:uppercase;
-                      letter-spacing:.5px;margin-bottom:5px;">Email</label>
-        <input type="email" name="email" value="<?= htmlspecialchars($user['email'] ?? '') ?>"
-               style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;
-                      padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:10px;">
-        <label style="display:block;font-size:12px;color:var(--text-muted);text-transform:uppercase;
-                      letter-spacing:.5px;margin-bottom:5px;">Student ID</label>
-        <input type="text" name="student_id" value="<?= htmlspecialchars($user['student_id'] ?? '') ?>"
-               style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;
-                      padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:12px;">
-        <button type="submit"
-                style="background:var(--accent);color:#fff;border:none;border-radius:8px;
-                       padding:9px 18px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">
-          Save Changes
-        </button>
-      </div>
-    </form>
+    <div class="settings-card">
+      <form method="POST" action="settings.php">
+        <input type="hidden" name="action" value="update_profile">
+        <label class="settings-field-label">Full Name</label>
+        <input type="text" name="name" class="settings-input"
+               value="<?= htmlspecialchars($user['name'] ?? '') ?>">
+        <label class="settings-field-label">Email</label>
+        <input type="email" name="email" class="settings-input"
+               value="<?= htmlspecialchars($user['email'] ?? '') ?>">
+        <label class="settings-field-label">Student ID</label>
+        <input type="text" name="student_id" class="settings-input"
+               value="<?= htmlspecialchars($user['student_id'] ?? '') ?>">
+        <button type="submit" class="settings-save-btn">Save Changes</button>
+      </form>
+    </div>
   </div>
 
   <!-- CHANGE PASSWORD -->
   <div class="settings-section">
     <div class="settings-section-title">Change Password</div>
-    <form method="POST" action="settings.php">
-      <input type="hidden" name="action" value="change_password">
-      <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:14px;margin-bottom:7px;">
-        <label style="display:block;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Current Password</label>
-        <input type="password" name="current_password"
-               style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:10px;">
-        <label style="display:block;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">New Password</label>
-        <input type="password" name="new_password"
-               style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:10px;">
-        <label style="display:block;font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;">Confirm New Password</label>
-        <input type="password" name="confirm_password"
-               style="width:100%;background:var(--bg);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;margin-bottom:12px;">
-        <button type="submit"
-                style="background:var(--accent);color:#fff;border:none;border-radius:8px;
-                       padding:9px 18px;font-family:'Syne',sans-serif;font-weight:700;font-size:13px;cursor:pointer;">
-          Change Password
-        </button>
-      </div>
-    </form>
+    <div class="settings-card">
+      <form method="POST" action="settings.php">
+        <input type="hidden" name="action" value="change_password">
+        <label class="settings-field-label">Current Password</label>
+        <div class="pw-wrap">
+          <input type="password" name="current_password" class="settings-input" placeholder="••••••••">
+          <button type="button" class="pw-eye" onclick="togglePw(this)" aria-label="Show password">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <label class="settings-field-label">New Password</label>
+        <div class="pw-wrap">
+          <input type="password" name="new_password" class="settings-input" placeholder="Min 6 characters">
+          <button type="button" class="pw-eye" onclick="togglePw(this)" aria-label="Show password">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <label class="settings-field-label">Confirm New Password</label>
+        <div class="pw-wrap">
+          <input type="password" name="confirm_password" class="settings-input" placeholder="Repeat new password">
+          <button type="button" class="pw-eye" onclick="togglePw(this)" aria-label="Show password">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <button type="submit" class="settings-save-btn">Change Password</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- APPEARANCE -->
+  <div class="settings-section">
+    <div class="settings-section-title">Appearance</div>
+    <div class="settings-row" id="darkModeRow">
+      <span class="settings-row-label">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+        </svg>
+        Dark Mode
+      </span>
+      <div class="toggle" id="darkModeToggle"></div>
+    </div>
   </div>
 
   <!-- NOTIFICATIONS -->
@@ -155,18 +202,63 @@ require_once '../includes/header.php';
     </div>
   </div>
 
-  <!-- SIGN OUT -->
+  <!-- ACCOUNT ACTIONS -->
   <div class="settings-section">
     <div class="settings-section-title">Account Actions</div>
-    <a href="../api/logout.php" class="settings-row" style="text-decoration:none;color:var(--accent);">
-      <span class="settings-row-label" style="color:var(--accent);">
+    <a href="../api/logout.php" class="settings-row">
+      <span class="settings-row-label">
         <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <path d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
         </svg>
         Sign Out
       </span>
+      <span class="settings-row-arrow">›</span>
     </a>
+    <div class="settings-row danger" onclick="document.getElementById('deleteConfirm').classList.add('open')">
+      <span class="settings-row-label">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+        </svg>
+        Delete Account
+      </span>
+      <span class="settings-row-arrow">›</span>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Account Confirm Dialog -->
+<div class="confirm-overlay" id="deleteConfirm">
+  <div class="confirm-box">
+    <h3>Delete Account?</h3>
+    <p>This will permanently delete your account and all your posted items. This cannot be undone.</p>
+    <div class="confirm-actions">
+      <button class="confirm-cancel"
+              onclick="document.getElementById('deleteConfirm').classList.remove('open')">
+        Cancel
+      </button>
+      <form method="POST" action="settings.php" style="flex:1;">
+        <input type="hidden" name="action" value="delete_account">
+        <button type="submit" class="confirm-delete" style="width:100%;">
+          Yes, Delete
+        </button>
+      </form>
+    </div>
   </div>
 </div>
 
 <?php require_once '../includes/footer.php'; ?>
+
+<script>
+const EYE_OPEN = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+const EYE_SHUT = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>';
+
+function togglePw(btn) {
+  const input = btn.closest('.pw-wrap').querySelector('input');
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  btn.querySelector('svg').innerHTML = isHidden ? EYE_SHUT : EYE_OPEN;
+}
+</script>

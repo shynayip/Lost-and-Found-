@@ -1,12 +1,8 @@
 <?php
-/* ============================================
-   pages/archive.php — Calendar Archive View
-   ============================================ */
 session_start();
 require_once '../db.php';
 
 $activePage = 'archive';
-$darkPage   = true; // dark theme for this page
 
 $db        = getDB();
 $calFilter = $_GET['filter'] ?? 'all';
@@ -48,6 +44,7 @@ $firstDate->modify('first day of this month');
 
 require_once '../includes/header.php';
 ?>
+<link rel="stylesheet" href="../css/calendar.css">
 
 <div class="cal-header">
   <div class="cal-header-title">📅 Archive by Date</div>

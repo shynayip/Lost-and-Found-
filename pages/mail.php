@@ -91,4 +91,154 @@ function sendVerificationEmail($email, $name, $code) {
         return false;
     }
 }
+
+function sendNewItemNotification($allUsers, $itemName, $itemLocation, $category, $status, $posterName, $description) {
+    if (empty($allUsers)) return;
+
+    $statusLabel = ucfirst($status);
+    $statusColor = $status === 'found' ? '#27a05e' : '#e8a020';
+    $statusBg    = $status === 'found' ? '#d6f5e6' : '#fff3cd';
+
+    $emojiMap = ['bag'=>'🎒','electronics'=>'📱','keys'=>'🔑','clothing'=>'👕','other'=>'📦'];
+    $emoji = $emojiMap[$category] ?? '📦';
+    $desc  = htmlspecialchars(mb_substr($description, 0, 120)) . (strlen($description) > 120 ? '…' : '');
+
+    foreach ($allUsers as $user) {
+        try {
+            $mail = new PHPMailer(true);
+            $mail->SMTPDebug  = 0;
+            $mail->isSMTP();
+            $mail->Host       = 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'shynayip913@gmail.com';
+            $mail->Password   = 'ixkdtvebvrcfnclr';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = 587;
+
+            $mail->setFrom('shynayip913@gmail.com', 'Lost and Found Campus Hub');
+            $mail->addAddress($user['email'], $user['name']);
+
+            $mail->isHTML(true);
+            $mail->Subject = "{$emoji} New Item Posted: \"{$itemName}\"";
+
+            $mail->Body = "
+            <div style='font-family:Arial,sans-serif;max-width:500px;margin:0 auto;'>
+              <div style='background:#c41230;padding:24px;border-radius:12px 12px 0 0;text-align:center;'>
+                <h1 style='color:#fff;margin:0;font-size:22px;'>Lost &amp; Found</h1>
+                <p style='color:#f9d0d0;margin:6px 0 0;font-size:13px;'>Campus Hub — New Item Posted</p>
+              </div>
+              <div style='background:#fffdf8;border:1px solid #e8d5c0;border-top:none;border-radius:0 0 12px 12px;padding:28px 24px;'>
+                <p style='color:#1a0a08;font-size:15px;'>Hello <strong>{$user['name']}</strong>,</p>
+                <p style='color:#5a4a40;font-size:14px;'>A new item has been posted on the Lost &amp; Found board:</p>
+
+                <div style='background:#faf4ec;border:1.5px solid #e8d5c0;border-radius:10px;padding:16px 20px;margin:18px 0;'>
+                  <p style='margin:0 0 4px;font-size:22px;'>{$emoji}</p>
+                  <p style='margin:0 0 6px;font-size:17px;font-weight:700;color:#1a0a08;'>{$itemName}</p>
+                  <p style='margin:0 0 10px;font-size:13px;color:#8a6a58;'>📍 {$itemLocation}</p>
+                  " . ($desc ? "<p style='margin:0 0 12px;font-size:13px;color:#5a4a40;'>{$desc}</p>" : "") . "
+                  <span style='background:{$statusBg};color:{$statusColor};border-radius:20px;
+                               padding:4px 14px;font-size:12px;font-weight:700;'>
+                    {$statusLabel}
+                  </span>
+                </div>
+
+                <p style='color:#8a6a58;font-size:13px;'>Posted by <strong>{$posterName}</strong></p>
+                <p style='margin-top:22px;'>
+                  <a href='http://localhost/Lost-and-Found-/pages/index.php'
+                     style='background:#c41230;color:#fff;padding:12px 26px;text-decoration:none;
+                            border-radius:30px;font-weight:700;font-size:14px;'>
+                    View on Campus Hub
+                  </a>
+                </p>
+                <hr style='border:none;border-top:1px solid #e8d5c0;margin:22px 0;'>
+                <p style='color:#aaa;font-size:11px;'>
+                  You received this because you have an account on Lost &amp; Found Campus Hub.
+                </p>
+              </div>
+            </div>";
+
+            $mail->AltBody = "New item \"{$itemName}\" posted at {$itemLocation} by {$posterName}. Status: {$statusLabel}.";
+            $mail->send();
+
+        } catch (Exception $e) {
+            error_log("New item notification failed for {$user['email']}: " . $e->getMessage());
+        }
+    }
+}
+
+function sendItemUpdateNotification($allUsers, $itemName, $itemLocation, $newStatus, $updaterName) {
+    if (empty($allUsers)) return;
+
+    $statusLabel = ucfirst($newStatus);
+    $statusColor = match($newStatus) {
+        'found'     => '#27a05e',
+        'returned'  => '#2a7dd4',
+        default     => '#e8a020',
+    };
+    $statusBg = match($newStatus) {
+        'found'     => '#d6f5e6',
+        'returned'  => '#dce8ff',
+        default     => '#fff3cd',
+    };
+
+    foreach ($allUsers as $user) {
+        try {
+            $mail = new PHPMailer(true);
+            $mail->SMTPDebug  = 0;
+            $mail->isSMTP();
+            $mail->Host       = 'smtp.gmail.com';
+            $mail->SMTPAuth   = true;
+            $mail->Username   = 'shynayip913@gmail.com';
+            $mail->Password   = 'ixkdtvebvrcfnclr';
+            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            $mail->Port       = 587;
+
+            $mail->setFrom('shynayip913@gmail.com', 'Lost and Found Campus Hub');
+            $mail->addAddress($user['email'], $user['name']);
+
+            $mail->isHTML(true);
+            $mail->Subject = "Item Update: \"{$itemName}\" is now {$statusLabel}";
+
+            $mail->Body = "
+            <div style='font-family:Arial,sans-serif;max-width:500px;margin:0 auto;'>
+              <div style='background:#c41230;padding:24px;border-radius:12px 12px 0 0;text-align:center;'>
+                <h1 style='color:#fff;margin:0;font-size:22px;'>Lost &amp; Found</h1>
+                <p style='color:#f9d0d0;margin:6px 0 0;font-size:13px;'>Campus Hub — Item Update</p>
+              </div>
+              <div style='background:#fffdf8;border:1px solid #e8d5c0;border-top:none;border-radius:0 0 12px 12px;padding:28px 24px;'>
+                <p style='color:#1a0a08;font-size:15px;'>Hello <strong>{$user['name']}</strong>,</p>
+                <p style='color:#5a4a40;font-size:14px;'>An item on the Lost &amp; Found board has been updated:</p>
+
+                <div style='background:#faf4ec;border:1.5px solid #e8d5c0;border-radius:10px;padding:16px 20px;margin:18px 0;'>
+                  <p style='margin:0 0 6px;font-size:16px;font-weight:700;color:#1a0a08;'>{$itemName}</p>
+                  <p style='margin:0 0 10px;font-size:13px;color:#8a6a58;'>📍 {$itemLocation}</p>
+                  <span style='background:{$statusBg};color:{$statusColor};border-radius:20px;
+                               padding:4px 14px;font-size:12px;font-weight:700;'>
+                    {$statusLabel}
+                  </span>
+                </div>
+
+                <p style='color:#8a6a58;font-size:13px;'>Updated by <strong>{$updaterName}</strong></p>
+                <p style='margin-top:22px;'>
+                  <a href='http://localhost/Lost-and-Found-/pages/index.php'
+                     style='background:#c41230;color:#fff;padding:12px 26px;text-decoration:none;
+                            border-radius:30px;font-weight:700;font-size:14px;'>
+                    View on Campus Hub
+                  </a>
+                </p>
+                <hr style='border:none;border-top:1px solid #e8d5c0;margin:22px 0;'>
+                <p style='color:#aaa;font-size:11px;'>
+                  You received this because you have an account on Lost &amp; Found Campus Hub.
+                </p>
+              </div>
+            </div>";
+
+            $mail->AltBody = "Item \"{$itemName}\" at {$itemLocation} is now {$statusLabel}. Updated by {$updaterName}.";
+            $mail->send();
+
+        } catch (Exception $e) {
+            error_log("Item update notification failed for {$user['email']}: " . $e->getMessage());
+        }
+    }
+}
 ?>

@@ -47,3 +47,24 @@ function setActiveNav() {
   });
 }
 document.addEventListener('DOMContentLoaded', setActiveNav);
+
+// ── DARK MODE ──
+function applyDarkMode(isDark) {
+  document.body.classList.toggle('dark', isDark);
+  localStorage.setItem('darkMode', isDark ? '1' : '0');
+  const toggle = document.getElementById('darkModeToggle');
+  if (toggle) toggle.classList.toggle('on', isDark);
+}
+
+function initDarkMode() {
+  applyDarkMode(localStorage.getItem('darkMode') === '1');
+
+  // Settings page: clicking the row OR the toggle both work without double-firing
+  const row = document.getElementById('darkModeRow');
+  if (row) {
+    row.addEventListener('click', function () {
+      applyDarkMode(!document.body.classList.contains('dark'));
+    });
+  }
+}
+document.addEventListener('DOMContentLoaded', initDarkMode);
