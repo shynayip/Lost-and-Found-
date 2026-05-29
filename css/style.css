@@ -1030,3 +1030,22 @@ body.dark .upload-area:hover { background: var(--pink); }
   transition: background .18s;
 }
 .confirm-delete:hover { background: #a30e26; }
+
+.pw-wrap { position: relative; }
+.pw-wrap .settings-input { padding-right: 44px; }
+.pw-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  transition: color .18s;
+}
+.pw-eye:hover { color: var(--accent); }
+.pw-eye svg { width: 18px; height: 18px; }

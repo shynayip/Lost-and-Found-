@@ -82,26 +82,6 @@ $user = $stmt->get_result()->fetch_assoc();
 require_once '../includes/header.php';
 ?>
 
-<style>
-.pw-wrap { position: relative; }
-.pw-wrap .settings-input { padding-right: 44px; }
-.pw-eye {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: var(--text-muted);
-  padding: 4px;
-  display: flex;
-  align-items: center;
-  transition: color .18s;
-}
-.pw-eye:hover { color: var(--accent); }
-.pw-eye svg { width: 18px; height: 18px; }
-</style>
 
 <div class="settings-wrap">
   <div class="settings-page-title">⚙️ Settings</div>
